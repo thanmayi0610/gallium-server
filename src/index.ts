@@ -1,26 +1,30 @@
-import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-const app = new Hono()
-app.use(
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import betterAuthServerClient from "./integrations/better-auth";
+
+const allRoutes = new Hono();
+
+allRoutes.use(
   cors({
-    origin:"http://localhost:4000",
+    origin: "http://localhost:4000",
     allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH','OPTIONS'],
-  })
-)
-app.get('/', (c) => {
-  return c.text('Hello Archana!')
-})
-serve(app, ({port}) => {
-  console.log(`Server running at http://localhost:${port}`)
-}
-)
+  }),
+);
 
+allRoutes.on(["GET", "POST"], "/api/auth/**", (context) => {
+  return betterAuthServerClient.handler(context.req.raw);
+});
 
+allRoutes.get("", (context) => {
+  return context.json({ message: "Hello, World" }, 200);
+});
 
-
+serve(allRoutes, ({ port }) => {
+  console.log(`\tRunning @ http://localhost:${port}`);
+});
 
 
 
